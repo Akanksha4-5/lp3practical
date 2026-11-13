@@ -1,0 +1,43 @@
+# ===========================================================
+# Sr. No. 3
+# DESIGN AND ANALYSIS OF ALGORITHMS
+#
+# Title: 0-1 Knapsack Problem Using Dynamic Programming
+#
+# CO4, CO5
+#
+# Program: Solve the 0-1 Knapsack problem using dynamic programming.
+# ===========================================================
+
+wt  = [10, 20, 30]
+val = [60, 100, 120]
+W, n = 50, len(wt)
+
+# dp[i][w] = best value using first i items with capacity w
+dp = [[0] * (W + 1) for _ in range(n + 1)]
+for i in range(1, n + 1):
+    for w in range(W + 1):
+        dp[i][w] = dp[i - 1][w]                                   # skip item
+        if wt[i - 1] <= w:                                        # take item
+            dp[i][w] = max(dp[i][w], val[i - 1] + dp[i - 1][w - wt[i - 1]])
+
+print("0-1 Knapsack (Dynamic Programming)")
+print("Maximum value =", dp[n][W])
+
+# trace back chosen items
+print("Items selected (weight:value) = ", end="")
+w = W
+for i in range(n, 0, -1):
+    if dp[i][w] != dp[i - 1][w]:
+        print(f"({wt[i-1]}:{val[i-1]}) ", end="")
+        w -= wt[i - 1]
+print()
+print("Time O(n*W), Space O(n*W)")
+
+
+# ==================== OUTPUT ====================
+# 0-1 Knapsack (Dynamic Programming)
+# Maximum value = 220
+# Items selected (weight:value) = (30:120) (20:100) 
+# Time O(n*W), Space O(n*W)
+# ================================================
