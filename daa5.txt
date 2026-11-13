@@ -1,0 +1,248 @@
+# ===========================================================
+# Sr. No. 5
+# DESIGN AND ANALYSIS OF ALGORITHMS
+#
+# Title: Analysis of Quick Sort Using Deterministic and Randomized Variants
+#
+# CO4, CO5
+#
+# Program: Write a program for analysis of quick sort by using deterministic and
+#          randomized variant.
+# ===========================================================
+
+import random
+import sys
+import time
+
+sys.setrecursionlimit(10000)     # sorted input makes deterministic version go ~n levels deep
+random.seed(42)                  # fixed seed -> repeatable demo
+comparisons = 0
+
+def partition(a, low, high):
+    global comparisons
+    pivot = a[high]
+    i = low - 1
+    for j in range(low, high):
+        comparisons += 1
+        if a[j] <= pivot:
+            i += 1
+            a[i], a[j] = a[j], a[i]
+    a[i + 1], a[high] = a[high], a[i + 1]
+    return i + 1
+
+def randomized_partition(a, low, high):
+    r = random.randint(low, high)
+    a[r], a[high] = a[high], a[r]          # random element becomes pivot
+    return partition(a, low, high)
+
+def deterministic_quick_sort(a, low, high):
+    if low < high:
+        p = partition(a, low, high)
+        deterministic_quick_sort(a, low, p - 1)
+        deterministic_quick_sort(a, p + 1, high)
+
+def randomized_quick_sort(a, low, high):
+    if low < high:
+        p = randomized_partition(a, low, high)
+        randomized_quick_sort(a, low, p - 1)
+        randomized_quick_sort(a, p + 1, high)
+
+def compare(name, data):
+    global comparisons
+    n = len(data)
+    d, r = data[:], data[:]
+
+    comparisons = 0
+    t = time.perf_counter()
+    deterministic_quick_sort(d, 0, n - 1)
+    d_ms = (time.perf_counter() - t) * 1000
+    d_comp = comparisons
+
+    comparisons = 0
+    t = time.perf_counter()
+    randomized_quick_sort(r, 0, n - 1)
+    r_ms = (time.perf_counter() - t) * 1000
+    r_comp = comparisons
+
+    print(f"{name:<14} | Deterministic: {d_comp:8d} comparisons, {d_ms:7.2f} ms | "
+          f"Randomized: {r_comp:8d} comparisons, {r_ms:7.2f} ms")
+
+arr = [25, 12, 18, 7, 30, 15, 3]
+d, r = arr[:], arr[:]
+
+print("Original Array:")
+print(*arr, "")
+
+deterministic_quick_sort(d, 0, len(d) - 1)
+print("Sorted Array using Deterministic QuickSort:")
+print(*d, "")
+
+randomized_quick_sort(r, 0, len(r) - 1)
+print("Sorted Array using Randomized QuickSort:")
+print(*r, "")
+
+# Real analysis: n = 2000 elements
+n = 2000
+rnd = [random.randint(0, 99999) for _ in range(n)]
+srt = list(range(n))
+rev = list(range(n, 0, -1))
+
+print(f"\nAnalysis for n = {n}:")
+compare("Random input", rnd)
+compare("Sorted input", srt)
+compare("Reverse input", rev)
+
+'''
+OUTPUT:
+Original Array:
+25 12 18 7 30 15 3 
+Sorted Array using Deterministic QuickSort:
+3 7 12 15 18 25 30 
+Sorted Array using Randomized QuickSort:
+3 7 12 15 18 25 30 
+
+Analysis for n = 2000:
+Random input   | Deterministic:    24226 comparisons,    1.79 ms | Randomized:    22950 comparisons,    2.09 ms
+Sorted input   | Deterministic:  1999000 comparisons,  129.47 ms | Randomized:    24802 comparisons,    2.05 ms
+Reverse input  | Deterministic:  1999000 comparisons,  109.20 ms | Randomized:    25943 comparisons,    2.18 ms
+(Timings / randomized counts vary slightly on every run)
+'''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+===========================================================
+Sr. No. 5
+DESIGN AND ANALYSIS OF ALGORITHMS
+
+Title: Analysis of Quick Sort Using Deterministic and Randomized Variants
+
+CO4, CO5
+
+Program: Write a program for analysis of quick sort by using deterministic and
+         randomized variant.
+===========================================================
+*/
+
+import java.util.Random;
+
+public class Assign5 {
+    static long comparisons = 0;
+    static Random rand = new Random(42);   // fixed seed -> repeatable demo
+
+    static int partition(int[] a, int low, int high) {
+        int pivot = a[high];
+        int i = low - 1;
+        for (int j = low; j < high; j++) {
+            comparisons++;
+            if (a[j] <= pivot) { i++; swap(a, i, j); }
+        }
+        swap(a, i + 1, high);
+        return i + 1;
+    }
+
+    static int randomizedPartition(int[] a, int low, int high) {
+        int r = low + rand.nextInt(high - low + 1);
+        swap(a, r, high);                  // random element becomes pivot
+        return partition(a, low, high);
+    }
+
+    static void deterministicQuickSort(int[] a, int low, int high) {
+        if (low < high) {
+            int p = partition(a, low, high);
+            deterministicQuickSort(a, low, p - 1);
+            deterministicQuickSort(a, p + 1, high);
+        }
+    }
+
+    static void randomizedQuickSort(int[] a, int low, int high) {
+        if (low < high) {
+            int p = randomizedPartition(a, low, high);
+            randomizedQuickSort(a, low, p - 1);
+            randomizedQuickSort(a, p + 1, high);
+        }
+    }
+
+    static void swap(int[] a, int i, int j) { int t = a[i]; a[i] = a[j]; a[j] = t; }
+
+    static void printArray(int[] a) {
+        for (int x : a) System.out.print(x + " ");
+        System.out.println();
+    }
+
+    static void compare(String name, int[] input) {
+        int n = input.length;
+        int[] d = input.clone(), r = input.clone();
+
+        comparisons = 0;
+        long t = System.nanoTime();
+        deterministicQuickSort(d, 0, n - 1);
+        double dMs = (System.nanoTime() - t) / 1e6;
+        long dComp = comparisons;
+
+        comparisons = 0;
+        t = System.nanoTime();
+        randomizedQuickSort(r, 0, n - 1);
+        double rMs = (System.nanoTime() - t) / 1e6;
+        long rComp = comparisons;
+
+        System.out.printf("%-14s | Deterministic: %8d comparisons, %7.2f ms | Randomized: %8d comparisons, %7.2f ms%n",
+                name, dComp, dMs, rComp, rMs);
+    }
+
+    public static void main(String[] args) {
+        int[] arr = {25, 12, 18, 7, 30, 15, 3};
+        int[] d = arr.clone(), r = arr.clone();
+
+        System.out.println("Original Array:");
+        printArray(arr);
+
+        deterministicQuickSort(d, 0, d.length - 1);
+        System.out.println("Sorted Array using Deterministic QuickSort:");
+        printArray(d);
+
+        randomizedQuickSort(r, 0, r.length - 1);
+        System.out.println("Sorted Array using Randomized QuickSort:");
+        printArray(r);
+
+        // Real analysis: n = 2000 elements
+        int n = 2000;
+        int[] random = new int[n], sorted = new int[n], reverse = new int[n];
+        Random g = new Random(1);
+        for (int i = 0; i < n; i++) { random[i] = g.nextInt(100000); sorted[i] = i; reverse[i] = n - i; }
+
+        System.out.println("\nAnalysis for n = " + n + ":");
+        compare("Random input", random);
+        compare("Sorted input", sorted);
+        compare("Reverse input", reverse);
+    }
+}
+
+/*
+OUTPUT:
+Original Array:
+25 12 18 7 30 15 3 
+Sorted Array using Deterministic QuickSort:
+3 7 12 15 18 25 30 
+Sorted Array using Randomized QuickSort:
+3 7 12 15 18 25 30 
+
+Analysis for n = 2000:
+Random input   | Deterministic:    24467 comparisons,    1.18 ms | Randomized:    23831 comparisons,    1.21 ms
+Sorted input   | Deterministic:  1999000 comparisons,   19.30 ms | Randomized:    24507 comparisons,    0.17 ms
+Reverse input  | Deterministic:  1999000 comparisons,    6.46 ms | Randomized:    24202 comparisons,    0.10 ms
+(Timings / randomized counts vary slightly on every run)
+*/

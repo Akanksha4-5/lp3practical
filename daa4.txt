@@ -1,0 +1,157 @@
+# ===========================================================
+# Sr. No. 4
+# DESIGN AND ANALYSIS OF ALGORITHMS
+#
+# Title: N-Queens Problem Using Backtracking
+#
+# CO4, CO5
+#
+# Program: Design n-Queens matrix having first Queen placed. Use backtracking to
+#          place remaining Queens to generate the final n-queen's matrix.
+# ===========================================================
+
+N = 8
+
+def print_solution(board):
+    print("N-Queens Solution:")
+    for row in board:
+        print(*row, "")
+
+# only rows above are checked, because we fill row by row
+def is_safe(board, row, col):
+    for i in range(row):
+        if board[i][col] == 1:
+            return False
+    i, j = row - 1, col - 1
+    while i >= 0 and j >= 0:
+        if board[i][j] == 1:
+            return False
+        i, j = i - 1, j - 1
+    i, j = row - 1, col + 1
+    while i >= 0 and j < N:
+        if board[i][j] == 1:
+            return False
+        i, j = i - 1, j + 1
+    return True
+
+def solve_nqueens(board, row):
+    if row >= N:
+        return True
+    for col in range(N):
+        if is_safe(board, row, col):
+            board[row][col] = 1                    # place
+            if solve_nqueens(board, row + 1):
+                return True
+            board[row][col] = 0                    # backtrack
+    return False
+
+board = [[0] * N for _ in range(N)]
+board[0][3] = 1                                    # first queen fixed at row 0, col 3
+if solve_nqueens(board, 1):
+    print_solution(board)
+else:
+    print("No solution exists.")
+
+'''
+OUTPUT:
+N-Queens Solution:
+0 0 0 1 0 0 0 0 
+1 0 0 0 0 0 0 0 
+0 0 0 0 1 0 0 0 
+0 0 0 0 0 0 0 1 
+0 1 0 0 0 0 0 0 
+0 0 0 0 0 0 1 0 
+0 0 1 0 0 0 0 0 
+0 0 0 0 0 1 0 0
+'''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+===========================================================
+Sr. No. 4
+DESIGN AND ANALYSIS OF ALGORITHMS
+
+Title: N-Queens Problem Using Backtracking
+
+CO4, CO5
+
+Program: Design n-Queens matrix having first Queen placed. Use backtracking to
+         place remaining Queens to generate the final n-queen's matrix.
+===========================================================
+*/
+
+public class Assign4 {
+    static int N = 8;
+
+    static void printSolution(int[][] board) {
+        System.out.println("N-Queens Solution:");
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) System.out.print(board[i][j] + " ");
+            System.out.println();
+        }
+    }
+
+    // only rows above are checked, because we fill row by row
+    static boolean isSafe(int[][] board, int row, int col) {
+        for (int i = 0; i < row; i++) if (board[i][col] == 1) return false;
+        for (int i = row - 1, j = col - 1; i >= 0 && j >= 0; i--, j--) if (board[i][j] == 1) return false;
+        for (int i = row - 1, j = col + 1; i >= 0 && j < N; i--, j++) if (board[i][j] == 1) return false;
+        return true;
+    }
+
+    static boolean solveNQueens(int[][] board, int row) {
+        if (row >= N) return true;
+        for (int col = 0; col < N; col++) {
+            if (isSafe(board, row, col)) {
+                board[row][col] = 1;                       // place
+                if (solveNQueens(board, row + 1)) return true;
+                board[row][col] = 0;                       // backtrack
+            }
+        }
+        return false;
+    }
+
+    public static void main(String[] args) {
+        int[][] board = new int[N][N];
+        board[0][3] = 1;                                   // first queen fixed at row 0, col 3
+        if (solveNQueens(board, 1)) printSolution(board);
+        else System.out.println("No solution exists.");
+    }
+}
+
+/*
+OUTPUT:
+N-Queens Solution:
+0 0 0 1 0 0 0 0 
+1 0 0 0 0 0 0 0 
+0 0 0 0 1 0 0 0 
+0 0 0 0 0 0 0 1 
+0 1 0 0 0 0 0 0 
+0 0 0 0 0 0 1 0 
+0 0 1 0 0 0 0 0 
+0 0 0 0 0 1 0 0
+*/
