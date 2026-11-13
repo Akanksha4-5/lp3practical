@@ -1,0 +1,610 @@
+# ML2 - Email Spam Detection (KNN vs SVM)
+
+# Importing libraries
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+%matplotlib inline
+
+import warnings
+warnings.filterwarnings('ignore')
+
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn import metrics
+
+
+# Loading the dataset
+df = pd.read_csv('emails.csv')
+
+df.head()
+
+# Displaying column names
+df.columns
+
+# Checking missing values
+df.isnull().sum()
+
+# Removing missing values
+df.dropna(inplace=True)
+
+# Removing unnecessary Email No. column
+df.drop(['Email No.'], axis=1, inplace=True)
+
+
+# Separating independent and dependent variables
+X = df.drop(['Prediction'], axis=1)
+
+y = df['Prediction']
+
+
+# Feature scaling
+from sklearn.preprocessing import scale
+
+X = scale(X)
+
+
+# Splitting dataset into training and testing data
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.3,
+    random_state=42
+)
+
+
+# KNN CLASSIFICATION
+
+from sklearn.neighbors import KNeighborsClassifier
+
+# Creating KNN model
+knn = KNeighborsClassifier(n_neighbors=7)
+
+# Training the model
+knn.fit(X_train, y_train)
+
+# Predicting the output
+y_pred = knn.predict(X_test)
+
+# Displaying predictions
+print("Prediction", y_pred)
+
+# Calculating KNN accuracy
+print(
+    "KNN accuracy = ",
+    metrics.accuracy_score(y_test, y_pred)
+)
+
+# Confusion matrix
+print(
+    "Confusion matrix",
+    metrics.confusion_matrix(y_test, y_pred)
+)
+
+
+# SVM CLASSIFICATION
+
+# Creating SVM model with cost C = 1
+model = SVC(C=1)
+
+# Training the model
+model.fit(X_train, y_train)
+
+# Predicting the output
+y_pred = model.predict(X_test)
+
+# Displaying confusion matrix
+print(
+    metrics.confusion_matrix(
+        y_true=y_test,
+        y_pred=y_pred
+    )
+)
+
+# Calculating SVM accuracy
+print(
+    "SVM accuracy = ",
+    metrics.accuracy_score(y_test, y_pred)
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# **ML Practical 2: Email Spam Detection (KNN vs SVM)**
+
+**Aim:** To classify emails as spam or not spam using two machine learning algorithms: K-Nearest Neighbors (KNN) and Support Vector Machine (SVM), and compare their accuracy.
+
+## **1. Basic explanation of the code**
+
+### **Step 1: Import libraries**
+
+```
+import pandas as pdimport numpy as npimport seaborn as snsimport matplotlib.pyplot as plt
+```
+
+- **Pandas:** Used to read and handle dataset.
+- **NumPy:** Used for numerical operations.
+- **Seaborn:** Used for data visualization.
+- **Matplotlib:** Used to create graphs.
+
+```
+%matplotlib inline
+```
+
+Displays graphs directly inside the Jupyter Notebook.
+
+```
+import warningswarnings.filterwarnings('ignore')
+```
+
+Hides warning messages.
+
+### **Step 2: Import machine learning libraries**
+
+```
+from sklearn.model_selection import train_test_splitfrom sklearn.svm import SVCfrom sklearn import metrics
+```
+
+- `train_test_split`: Divides data into training and testing sets.
+- `SVC`: Support Vector Classifier used for SVM.
+- `metrics`: Used to calculate accuracy and confusion matrix.
+
+### **Step 3: Load the dataset**
+
+```
+df = pd.read_csv('emails.csv')df.head()
+```
+
+- Reads the `emails.csv` dataset.
+- `df.head()` displays the first five rows.
+
+```
+df.columns
+```
+
+Displays all column names.
+
+```
+df.isnull().sum()
+```
+
+Checks the number of missing values in each column.
+
+### **Step 4: Remove missing and unnecessary data**
+
+```
+df.dropna(inplace=True)
+```
+
+Removes rows containing missing values.
+
+```
+df.drop(['Email No.'], axis=1, inplace=True)
+```
+
+Removes the `Email No.` column because it is an identifier and is not needed for prediction.
+
+- `axis=1` means column.
+- `inplace=True` means changes are made directly to the original dataset.
+
+### **Step 5: Separate input and output**
+
+```
+X = df.drop(['Prediction'], axis=1)y = df['Prediction']
+```
+
+- **X:** Input features used to make predictions. These represent the email data.
+- **y:** Target/output column that tells whether the email is spam or not.
+
+Usually:
+
+- `0` = Not spam
+- `1` = Spam
+
+### **Step 6: Feature scaling**
+
+```
+from sklearn.preprocessing import scaleX = scale(X)
+```
+
+Feature scaling brings numerical features to a similar scale.
+
+**Why is it needed?**
+
+KNN and SVM are affected by the scale of input features. Scaling helps prevent features with larger numerical values from dominating the calculations.
+
+### **Step 7: Split the dataset**
+
+```
+X_train, X_test, y_train, y_test = train_test_split(    X, y, test_size=0.3, random_state=42)
+```
+
+Divides the dataset into:
+
+- **70% training data:** Used to train the model.
+- **30% testing data:** Used to check model performance.
+
+`random_state=42` ensures the same split is produced each time the code is run.
+
+## **2. KNN classification**
+
+[Medium](https://images.openai.com/static-rsc-4/hJOcuxFBuW51zxLNRUKU-5E9IVe-qOOkRx4L1FjE36isi00o2C5uEroWsaPcOY52rlwf90ptLts97nAhZY0PJ7DheOghUwIs9XhVe-yyhpheK6lXKTYT9UBJcYYK4AM5a2Y4TR2jm64dnFPqwZzM-CjXTIp6cFEoVEfUOOQxwS0?purpose=inline)
+
+[medium.com](https://medium.com/%40saurabhshirole1/understanding-the-performance-of-the-knn-model-based-on-k-values-3bdaa2a68ca8?utm_source=chatgpt.com)
+
+### **Step 8: Import and create KNN model**
+
+```
+from sklearn.neighbors import KNeighborsClassifierknn = KNeighborsClassifier(n_neighbors=7)
+```
+
+KNN stands for **K-Nearest Neighbors**.
+
+It classifies new data based on the nearest data points.
+
+`n_neighbors=7` means the model considers the 7 nearest neighbors to decide the class.
+
+**Example:** If 5 out of 7 nearest emails are spam, the new email is classified as spam.
+
+### **Step 9: Train the KNN model**
+
+```
+knn.fit(X_train, y_train)
+```
+
+The model learns from the training data.
+
+### **Step 10: Predict output**
+
+```
+y_pred = knn.predict(X_test)
+```
+
+Predicts whether the test emails are spam or not spam.
+
+```
+print("Prediction", y_pred)
+```
+
+Displays the predicted results.
+
+### **Step 11: Calculate KNN accuracy**
+
+```
+metrics.accuracy_score(y_test, y_pred)
+```
+
+Calculates how many predictions are correct.
+
+**Accuracy formula:**
+
+\\[ Accuracy = \frac{Correct\ Predictions}{Total\ Predictions}\times100 \\]
+
+### **Step 12: Confusion matrix**
+
+```
+metrics.confusion_matrix(y_test, y_pred)
+```
+
+Shows the number of correct and incorrect classifications.
+
+[📊 Confusion Matrix Explained (With Python Code & Metrics) | by Soumodeep Santra | Dec, 2025 | Medium](https://images.openai.com/static-rsc-4/xpkaNIzcwRUhd-zBzRfMTywCaCThC8r2-5WDfdG2nC35_h58QSYoD6Wh4IP8cTMcJzOqyrGT8dCN8R1iYpCESXePAGNxajJX-VSyI3Jv4lGhrYNRUTY6_je7QSqKZP0cd1nZvBR-j-1Uu02DNQOtTdvDNhce4xC5gP7QyHcCoYg?purpose=inline)
+
+[medium.com](https://medium.com/%40soumodeepsantra5/confusion-matrix-explained-with-python-code-metrics-f4d78337d3f5?utm_source=chatgpt.com)
+
+| Term                | Meaning                                  |
+| ------------------- | ---------------------------------------- |
+| True Positive (TP)  | Spam correctly predicted as spam         |
+| True Negative (TN)  | Not spam correctly predicted as not spam |
+| False Positive (FP) | Not spam incorrectly predicted as spam   |
+| False Negative (FN) | Spam incorrectly predicted as not spam   |
+
+## **3. SVM classification**
+
+[A Comparative Analysis of SVM and ELM Classification on Software Reliability Prediction Model](https://images.openai.com/static-rsc-4/78qIVmQFTU4Sie7-V0rZAD-PE-9BdFz5OKywTcY0sEKmF_LqvNVI-1QXtbTGvQvEtkEJlgWDJnWafJpJAGoJEIaAtqXaiwMmLgYkV4RCCSwd_j9aNxM8CKBRWotfVFqdyrPY2JrRPTq50RBpd2e9hIny3GNQZyGw3F-91nHN-RY?purpose=inline)
+
+[mdpi.com](https://www.mdpi.com/2079-9292/11/17/2707?utm_source=chatgpt.com)
+
+### **Step 13: Create SVM model**
+
+```
+from sklearn.svm import SVCmodel = SVC(C=1)
+```
+
+SVM stands for **Support Vector Machine**.
+
+It is a supervised machine learning algorithm used for classification.
+
+It finds the best decision boundary, called a **hyperplane**, to separate different classes.
+
+`C=1` is the regularization parameter. It controls the balance between classification errors and a wider margin.
+
+### **Step 14: Train SVM model**
+
+```
+model.fit(X_train, y_train)
+```
+
+Trains the SVM model using training data.
+
+### **Step 15: Predict output**
+
+```
+y_pred = model.predict(X_test)
+```
+
+Predicts whether each test email is spam or not spam.
+
+### **Step 16: Display confusion matrix**
+
+```
+metrics.confusion_matrix(    y_true=y_test,    y_pred=y_pred)
+```
+
+Displays the confusion matrix for SVM predictions.
+
+### **Step 17: Calculate SVM accuracy**
+
+```
+metrics.accuracy_score(y_test, y_pred)
+```
+
+Calculates the accuracy of the SVM model.
+
+**Finally, compare KNN accuracy and SVM accuracy** to understand which model performed better on the test dataset.
+
+## **4. Difference between KNN and SVM**
+
+| KNN                                        | SVM                                       |
+| ------------------------------------------ | ----------------------------------------- |
+| K-Nearest Neighbors                        | Support Vector Machine                    |
+| Distance-based algorithm                   | Hyperplane-based algorithm                |
+| Uses nearest neighbors                     | Finds the best decision boundary          |
+| `k` decides the number of neighbors        | `C` controls regularization               |
+| Simple to understand                       | Can handle complex decision boundaries    |
+| Prediction can be slower on large datasets | Training can be computationally expensive |
+
+## **5. Important viva questions and answers**
+
+### **Basic machine learning questions**
+
+**1. What is Machine Learning?**
+
+Machine Learning is a branch of AI that allows computers to learn from data and make predictions without being explicitly programmed for every task.
+
+**2. What is classification?**
+
+Classification is a supervised learning technique used to divide data into predefined categories.
+
+**3. What is email spam detection?**
+
+It is the process of identifying unwanted or promotional emails and separating them from genuine emails.
+
+**4. What is supervised learning?**
+
+Supervised learning is a type of machine learning in which the model is trained using labelled data.
+
+**5. What is a dataset?**
+
+A dataset is a collection of data used to train and test a machine learning model.
+
+**6. What is the target variable?**
+
+The target variable is the output that the model tries to predict. In our practical, it is `Prediction`.
+
+**7. What are features?**
+
+Features are the input variables used by the model to make predictions. In our practical, they are the email-related columns other than `Prediction`.
+
+### **KNN viva questions**
+
+**8. What is KNN?**
+
+KNN stands for K-Nearest Neighbors. It classifies a data point based on the majority class among its nearest neighbors.
+
+**9. What is K in KNN?**
+
+K is the number of nearest neighbors considered for classification.
+
+**10. What is the value of K in our practical?**
+
+The value of K is 7.
+
+**11. Why do we use KNN?**
+
+We use KNN to classify emails into spam and not spam based on similarities with nearby examples.
+
+**12. Is KNN supervised or unsupervised?**
+
+KNN is a supervised learning algorithm.
+
+**13. What happens if K is too small?**
+
+The model may become sensitive to noise and overfit.
+
+**14. What happens if K is too large?**
+
+The model may become too generalized and underfit.
+
+### **SVM viva questions**
+
+**15. What is SVM?**
+
+SVM stands for Support Vector Machine. It is a supervised learning algorithm used mainly for classification.
+
+**16. What is a hyperplane?**
+
+A hyperplane is a decision boundary that separates different classes.
+
+**17. What are support vectors?**
+
+Support vectors are the data points closest to the decision boundary. They help determine the position of the hyperplane.
+
+**18. What is the use of C in SVM?**
+
+C is a regularization parameter that controls the trade-off between classification errors and margin size.
+
+**19. What is the value of C in our practical?**
+
+The value of C is 1.
+
+**20. What is the difference between SVM and KNN?**
+
+KNN classifies using the nearest neighbors, whereas SVM classifies using an optimal decision boundary.
+
+### **Dataset and evaluation questions**
+
+**21. What is&#x20;**`train_test_split()`**?**
+
+It divides the dataset into training and testing data.
+
+**22. Why do we use 70:30 splitting?**
+
+70% data is used for training and 30% is used for testing the model.
+
+**23. What is&#x20;**`random_state=42`**?**
+
+It ensures reproducibility by keeping the random split consistent.
+
+**24. What is feature scaling?**
+
+Feature scaling brings numerical features to a similar scale.
+
+**25. Why is scaling important in KNN and SVM?**
+
+Because both algorithms can be affected by differences in feature magnitudes.
+
+**26. What is accuracy?**
+
+Accuracy is the percentage of correctly predicted results out of all predictions.
+
+**27. What is a confusion matrix?**
+
+It is a table that shows correct and incorrect predictions made by a classification model.
+
+**28. What is overfitting?**
+
+Overfitting happens when a model performs well on training data but poorly on new data.
+
+**29. What is underfitting?**
+
+Underfitting happens when a model fails to learn the patterns in the training data properly.
+
+**30. Which algorithm is better, KNN or SVM?**
+
+The algorithm with higher testing accuracy performs better on this dataset. We should compare their results rather than assume one is always better.
+
+## **6. Practical flow to remember during the exam**
+
+## **ML2 execution flow**
+
+1. Import libraries
+2. Read `emails.csv`
+3. Display data and columns
+4. Check and remove missing values
+5. Drop `Email No.` column
+6. Separate X and y
+7. Scale the features
+8. Split into 70% training and 30% testing
+9. Apply KNN with K = 7
+10. Train, predict and calculate KNN accuracy
+11. Display KNN confusion matrix
+12. Apply SVM with C = 1
+13. Train, predict and calculate SVM accuracy
+14. Compare both accuracies
+
+## **7. Most important things to memorize**
+
+| Question           | Answer                        |
+| ------------------ | ----------------------------- |
+| Practical name     | Email Spam Detection          |
+| Algorithms         | KNN and SVM                   |
+| Dataset            | `emails.csv`                  |
+| Target column      | `Prediction`                  |
+| Removed column     | `Email No.`                   |
+| KNN value          | 7                             |
+| SVM value          | C = 1                         |
+| Training data      | 70%                           |
+| Testing data       | 30%                           |
+| Split random state | 42                            |
+| Evaluation         | Accuracy and confusion matrix |
+
+**One-line explanation to tell the examiner:**
+
+"In this practical, we use the emails dataset to classify emails as spam or not spam. We preprocess the data, separate input and output, scale the features, split the dataset into training and testing sets, apply KNN and SVM classification, and compare their accuracy."

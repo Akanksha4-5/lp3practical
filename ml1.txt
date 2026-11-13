@@ -1,0 +1,1040 @@
+# Importing libraries
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+# Reading the dataset
+uber = pd.read_csv('uber.csv')
+
+uber.head()
+uber.info()
+uber.isnull().sum()
+
+# Removing unnecessary columns
+uber_2 = uber.drop(['Unnamed: 0', 'key'], axis=1)
+
+# Removing missing values
+uber_2.dropna(axis=0, inplace=True)
+
+uber_2.isnull().sum()
+
+
+# Haversine formula to calculate distance
+def haversine(lon_1, lon_2, lat_1, lat_2):
+
+    lon_1, lon_2, lat_1, lat_2 = map(
+        np.radians,
+        [lon_1, lon_2, lat_1, lat_2]
+    )
+
+    diff_lon = lon_2 - lon_1
+    diff_lat = lat_2 - lat_1
+
+    km = 2 * 6371 * np.arcsin(
+        np.sqrt(
+            np.sin(diff_lat/2.0)**2 +
+            np.cos(lat_1) * np.cos(lat_2) *
+            np.sin(diff_lon/2.0)**2
+        )
+    )
+
+    return km
+
+
+# Calculating distance
+uber_2['Distance'] = haversine(
+    uber_2['pickup_longitude'],
+    uber_2['dropoff_longitude'],
+    uber_2['pickup_latitude'],
+    uber_2['dropoff_latitude']
+)
+
+uber_2['Distance'] = uber_2['Distance'].astype(float).round(2)
+
+uber_2.head()
+
+
+# Visualizing distance and fare
+plt.scatter(uber_2['Distance'], uber_2['fare_amount'])
+plt.xlabel("Distance")
+plt.ylabel("fare_amount")
+plt.show()
+
+
+# Removing outliers
+uber_2.drop(
+    uber_2[uber_2['Distance'] > 60].index,
+    inplace=True
+)
+
+uber_2.drop(
+    uber_2[uber_2['Distance'] == 0].index,
+    inplace=True
+)
+
+uber_2.drop(
+    uber_2[uber_2['fare_amount'] == 0].index,
+    inplace=True
+)
+
+uber_2.drop(
+    uber_2[uber_2['fare_amount'] < 0].index,
+    inplace=True
+)
+
+uber_2.drop(
+    uber_2[
+        (uber_2['fare_amount'] > 100) &
+        (uber_2['Distance'] < 1)
+    ].index,
+    inplace=True
+)
+
+uber_2.drop(
+    uber_2[
+        (uber_2['fare_amount'] < 100) &
+        (uber_2['Distance'] > 100)
+    ].index,
+    inplace=True
+)
+
+uber_2.info()
+
+plt.scatter(uber_2['Distance'], uber_2['fare_amount'])
+plt.xlabel("Distance")
+plt.ylabel("fare_amount")
+plt.show()
+
+
+# Extracting date and time features
+uber_2['pickup_datetime'] = pd.to_datetime(
+    uber_2['pickup_datetime']
+)
+
+uber_2['Year'] = uber_2['pickup_datetime'].apply(
+    lambda time: time.year
+)
+
+uber_2['Month'] = uber_2['pickup_datetime'].apply(
+    lambda time: time.month
+)
+
+uber_2['Day'] = uber_2['pickup_datetime'].apply(
+    lambda time: time.day
+)
+
+uber_2['Day of Week'] = uber_2['pickup_datetime'].apply(
+    lambda time: time.dayofweek
+)
+
+uber_2['Day of Week_num'] = uber_2['pickup_datetime'].apply(
+    lambda time: time.dayofweek
+)
+
+uber_2['Hour'] = uber_2['pickup_datetime'].apply(
+    lambda time: time.hour
+)
+
+
+# Mapping weekday numbers to names
+day_map = {
+    0: 'Mon',
+    1: 'Tue',
+    2: 'Wed',
+    3: 'Thu',
+    4: 'Fri',
+    5: 'Sat',
+    6: 'Sun'
+}
+
+uber_2['Day of Week'] = uber_2['Day of Week'].map(day_map)
+
+
+# Creating additional columns
+uber_2['counter'] = 1
+
+uber_2['pickup'] = (
+    uber_2['pickup_latitude'].astype(str) + "," +
+    uber_2['pickup_longitude'].astype(str)
+)
+
+uber_2['drop off'] = (
+    uber_2['dropoff_latitude'].astype(str) + "," +
+    uber_2['dropoff_longitude'].astype(str)
+)
+
+uber_2.head()
+
+
+# Number of trips per year
+no_of_trips = []
+
+year = [2009, 2010, 2011, 2012, 2013, 2014, 2015]
+
+colors = [
+    '#1f77b4', '#ff7f0e', '#2ca02c',
+    '#d62728', '#9467bd', '#8c564b',
+    '#e377c2', '#7f7f7f', '#bcbd22',
+    '#17becf'
+]
+
+for i in range(2009, 2016):
+    x = uber_2.loc[uber_2['Year'] == i, 'counter'].sum()
+    no_of_trips.append(x)
+
+print("Average trips a year: ")
+print(year, no_of_trips)
+
+plt.bar(year, no_of_trips, color=colors)
+plt.show()
+
+
+# Number of trips per month
+no_of_trips = []
+
+month = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+]
+
+for i in range(1, 13):
+    x = uber_2.loc[uber_2['Month'] == i, 'counter'].sum()
+    no_of_trips.append(x)
+
+print("Average trips a Month: ")
+print(month, no_of_trips)
+
+plt.bar(month, no_of_trips, color=colors)
+plt.show()
+
+
+# Number of trips per day
+no_of_trips = []
+
+day = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+for i in range(0, 7):
+    x = uber_2.loc[
+        uber_2['Day of Week_num'] == i,
+        'counter'
+    ].sum()
+
+    no_of_trips.append(x)
+
+print("Average trips by Days: ")
+print(day, no_of_trips)
+
+plt.bar(day, no_of_trips, color=colors)
+plt.show()
+
+
+# Grouping data by year and month
+year_vs_trips = uber_2.groupby(
+    ['Year', 'Month']
+).agg(
+    no_of_trips=('counter', 'count'),
+    Average_fair=('fare_amount', 'mean'),
+    Total_fair=('fare_amount', 'sum'),
+    Avg_distance=('Distance', 'mean')
+).reset_index()
+
+year_vs_trips['avg_no_of_trips'] = (
+    year_vs_trips['no_of_trips'] / 30
+)
+
+year_vs_trips['month_year'] = (
+    year_vs_trips['Month'].astype(str) + ", " +
+    year_vs_trips['Year'].astype(str)
+)
+
+year_vs_trips = year_vs_trips.reset_index()
+
+year_vs_trips.head()
+
+
+# Line graph: Number of trips vs months
+year_vs_trips.plot(
+    kind='line',
+    x='month_year',
+    y='no_of_trips',
+    xlabel='January, 2009 - June, 2015',
+    ylabel='No of Trips',
+    title='No of trips vs Months'
+)
+
+plt.show()
+
+
+# Heatmap
+import seaborn as sns
+
+df_1 = uber_2[
+    ['Distance', 'Day of Week_num', 'Hour']
+].copy()
+
+df_h = df_1.copy()
+
+df_h = df_h.groupby(
+    ['Hour', 'Day of Week_num']
+).mean()
+
+df_h = df_h.unstack(level=0)
+
+fig, ax = plt.subplots(figsize=(24, 7))
+
+sns.heatmap(
+    df_h,
+    cmap="Reds",
+    linewidth=0.3,
+    cbar_kws={"shrink": .8}
+)
+
+xticks_labels = [
+    '12 AM', '01 AM', '02 AM', '03 AM',
+    '04 AM', '05 AM', '06 AM', '07 AM',
+    '08 AM', '09 AM', '10 AM', '11 AM',
+    '12 PM', '01 PM', '02 PM', '03 PM',
+    '04 PM', '05 PM', '06 PM', '07 PM',
+    '08 PM', '09 PM', '10 PM', '11 PM'
+]
+
+yticks_labels = [
+    'Mon', 'Tue', 'Wed', 'Thu',
+    'Fri', 'Sat', 'Sun'
+]
+
+plt.xticks(np.arange(24) + .5, labels=xticks_labels)
+plt.yticks(np.arange(7) + .5, labels=yticks_labels)
+
+ax.xaxis.tick_top()
+
+title = 'Weekly Uber Rides'.upper()
+
+plt.title(title, fontdict={'fontsize': 25})
+
+plt.show()
+
+
+# Statistical analysis
+import statistics as st
+
+print(
+    "Mean of fare prices is %s "
+    % (st.mean(uber_2['fare_amount']))
+)
+
+print(
+    "Median of fare prices is %s "
+    % (st.median(uber_2['fare_amount']))
+)
+
+print(
+    "Standard Deviation of Fare Prices is %s "
+    % (st.stdev(uber_2['fare_amount']))
+)
+
+print(
+    "Mean of Distance is %s "
+    % (st.mean(uber_2['Distance']))
+)
+
+print(
+    "Median of Distance is %s "
+    % (st.median(uber_2['Distance']))
+)
+
+print(
+    "Standard Deviation of Distance is %s "
+    % (st.stdev(uber_2['Distance']))
+)
+
+
+# Calculate correlation
+corr = uber_2.corr(numeric_only=True)
+
+corr = corr.dropna(
+    how='all',
+    axis=0
+).dropna(
+    how='all',
+    axis=1
+)
+
+corr.style.background_gradient(cmap='BuGn')
+
+
+# Selecting independent and dependent variables
+X = uber_2['Distance'].values.reshape(-1, 1)
+
+y = uber_2['fare_amount'].values.reshape(-1, 1)
+
+
+# Standardization
+from sklearn.preprocessing import StandardScaler
+
+std = StandardScaler()
+
+y_std = std.fit_transform(y)
+
+print(y_std)
+
+x_std = std.fit_transform(X)
+
+print(x_std)
+
+
+# Splitting dataset
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(
+    x_std,
+    y_std,
+    test_size=0.2,
+    random_state=0
+)
+
+
+# Linear Regression
+from sklearn.linear_model import LinearRegression
+
+l_reg = LinearRegression()
+
+l_reg.fit(X_train, y_train)
+
+
+# Training and testing scores
+print(
+    "Training set score: {:.2f}".format(
+        l_reg.score(X_train, y_train)
+    )
+)
+
+print(
+    "Test set score: {:.7f}".format(
+        l_reg.score(X_test, y_test)
+    )
+)
+
+
+# Prediction
+y_pred = l_reg.predict(X_test)
+
+results = pd.DataFrame({
+    'Actual': y_test.ravel(),
+    'Predicted': y_pred.ravel()
+})
+
+results.head(20)
+
+
+# Model evaluation
+from sklearn import metrics
+
+print(
+    'Mean Absolute Error:',
+    metrics.mean_absolute_error(y_test, y_pred)
+)
+
+print(
+    'Mean Squared Error:',
+    metrics.mean_squared_error(y_test, y_pred)
+)
+
+print(
+    'Root Mean Squared Error:',
+    np.sqrt(metrics.mean_squared_error(y_test, y_pred))
+)
+
+
+# Intercept and coefficient
+print(l_reg.intercept_)
+print(l_reg.coef_)
+
+
+# RANDOM FOREST REGRESSION
+
+from sklearn.ensemble import RandomForestRegressor
+
+from sklearn.metrics import (
+    r2_score,
+    mean_squared_error,
+    mean_absolute_error
+)
+
+# Selecting input and output
+X = uber_2[['Distance']]
+y = uber_2['fare_amount']
+
+# Splitting data
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.2,
+    random_state=0
+)
+
+# Creating model
+rf = RandomForestRegressor(
+    n_estimators=100,
+    random_state=0
+)
+
+# Training model
+rf.fit(X_train, y_train)
+
+# Prediction
+y_pred_rf = rf.predict(X_test)
+
+# Evaluation
+print("R2 Score:", r2_score(y_test, y_pred_rf))
+
+print(
+    "MAE:",
+    mean_absolute_error(y_test, y_pred_rf)
+)
+
+print(
+    "MSE:",
+    mean_squared_error(y_test, y_pred_rf)
+)
+
+print(
+    "RMSE:",
+    np.sqrt(mean_squared_error(y_test, y_pred_rf))
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//ML Practical 1 – Uber Fare Prediction
+(Practical 1 of 5) (Exam preparation)
+
+Don't worry! We'll prepare all five ML practicals one by one. I'll teach you as if you're sitting in front of your examiner tomorrow.
+
+For every practical, we'll cover:
+1. Aim – What the practical does.
+2. Concepts – Understand what each algorithm does.
+3. Code explanation – What each important line means.
+4. Execution flow – What to run and in which order.
+5. Viva questions with answers – Basic to advanced.
+6. Important mistakes – What to avoid during the practical.
+Let's start with your actual Uber code.
+1. Understand the practical
+Aim: To predict the price of an Uber ride based on the distance between pickup and drop-off locations using Linear Regression.
+
+Imagine:
+- Pickup location: Point A
+- Drop-off location: Point B
+- Distance: 10 km
+- Expected fare: ₹150 (illustrative)
+Our machine learning model learns the relationship between distance and fare from historical Uber data.
+What is the dataset?
+Your uber.csv dataset contains information such as:
+Column	Meaning
+key	Unique trip identifier
+fare_amount	Actual ride fare
+pickup_datetime	Date and time of pickup
+pickup_longitude	Pickup longitude
+pickup_latitude	Pickup latitude
+dropoff_longitude	Drop-off longitude
+dropoff_latitude	Drop-off latitude
+passenger_count	Number of passengers
+
+
+Important: Our target variable is fare_amount, because that is what we want to predict.
+
+Our main independent variable is Distance.
+2. Understand the ML concepts first
+Concept	Simple meaning
+Machine Learning	Teaching computers to learn from data
+Regression	Predicting a numerical value
+Classification	Predicting a category
+Dataset	Collection of data
+Feature (X)	Input used for prediction
+Target (y)	Output we want to predict
+Training data	Data used to teach the model
+Testing data	Data used to test the model
+Outlier	Unusually high or low value
+Correlation	Relationship between two variables
+Linear Regression	Finds a straight-line relationship
+Random Forest	Combines multiple decision trees
+
+
+Why Linear Regression?
+Linear Regression predicts a numerical value using a mathematical equation:
+\[
+y = mx+c
+\]
+Where:
+- \(y\) = Predicted fare
+- \(x\) = Distance
+- \(m\) = Slope
+- \(c\) = Intercept
+For example, if:
+\[
+Fare = 10 \times Distance + 50
+\]
+For a 5 km ride:
+\[
+Fare = 10(5)+50 = ₹100
+\]
+This is just an illustrative equation, not your trained model's actual equation.
+3. Code explanation – Step by step
+Step 1: Import libraries
+Your code:
+import matplotlib.pyplot as pltimport numpy as npimport pandas as pd
+
+
+What are these libraries?
+Library	Purpose
+Pandas	Read and manipulate datasets
+NumPy	Mathematical calculations
+Matplotlib	Create graphs
+
+
+Viva: What is Pandas?
+
+Answer: Pandas is a Python library used for data manipulation and analysis. It provides DataFrames to store tabular data.
+Step 2: Read the dataset
+uber = pd.read_csv('uber.csv')uber.head()uber.info()uber.isnull().sum()
+
+
+Explanation:
+- read_csv() – Loads the CSV file.
+- head() – Displays the first five rows.
+- info() – Displays column names, data types and non-null counts.
+- isnull().sum() – Counts missing values in each column.
+(Remember for practical)
+
+Your uber.csv file must be in the same working folder as your notebook, or you must provide its correct path.
+Step 3: Remove unnecessary columns and missing values
+uber_2 = uber.drop(    ['Unnamed: 0', 'key'], axis=1)uber_2.dropna(axis=0, inplace=True)uber_2.isnull().sum()
+
+
+Explanation:
+- drop() removes unnecessary columns.
+- axis=1 means columns.
+- axis=0 means rows.
+- dropna() removes rows containing missing values.
+- inplace=True modifies the existing DataFrame.
+Why remove key?
+
+Because it is an identifier, not a meaningful feature for predicting fare.
+Step 4: Calculate distance using Haversine formula
+This is one of the most important concepts in your practical.
+
+Pickup and drop-off locations are represented by latitude and longitude.
+
+We need to calculate the geographical distance between these two points.
+
+Your code:
+def haversine(lon_1, lon_2, lat_1, lat_2):    lon_1, lon_2, lat_1, lat_2 = map(        np.radians,        [lon_1, lon_2, lat_1, lat_2]    )    diff_lon = lon_2 - lon_1    diff_lat = lat_2 - lat_1    km = 2 * 6371 * np.arcsin(        np.sqrt(            np.sin(diff_lat/2.0)**2 +            np.cos(lat_1) * np.cos(lat_2) *            np.sin(diff_lon/2.0)**2        )    )    return km
+
+
+What is the Haversine formula?
+
+It calculates the shortest distance between two geographical points on the Earth's surface, assuming a spherical Earth.
+- 6371 = Approximate radius of Earth in kilometres.
+- Latitude = North-South position.
+- Longitude = East-West position.
+- np.radians() converts degrees into radians.
+Now calculate the distance:
+uber_2['Distance'] = haversine(    uber_2['pickup_longitude'],    uber_2['dropoff_longitude'],    uber_2['pickup_latitude'],    uber_2['dropoff_latitude'])uber_2['Distance'] = (    uber_2['Distance'].astype(float).round(2))
+
+
+This creates a new column called Distance.
+
+Viva question: Why do we use Haversine instead of ordinary distance?
+
+Answer: Because latitude and longitude represent geographical coordinates on the curved surface of the Earth. Haversine calculates the geographical distance between them.
+Step 5: Visualize the distance and fare
+plt.scatter(    uber_2['Distance'],    uber_2['fare_amount'])plt.xlabel("Distance")plt.ylabel("fare_amount")
+
+
+What is a scatter plot?
+
+A scatter plot displays the relationship between two numerical variables.
+- X-axis = Distance
+- Y-axis = Fare amount
+If distance increases, fare generally increases.
+Step 6: Identify and remove outliers
+Your code:
+uber_2.drop(    uber_2[uber_2['Distance'] > 60].index,    inplace=True)uber_2.drop(    uber_2[uber_2['Distance'] == 0].index,    inplace=True)uber_2.drop(    uber_2[uber_2['fare_amount'] == 0].index,    inplace=True)uber_2.drop(    uber_2[uber_2['fare_amount'] < 0].index,    inplace=True)uber_2.drop(    uber_2[        (uber_2['fare_amount'] > 100) &        (uber_2['Distance'] < 1)    ].index,    inplace=True)uber_2.drop(    uber_2[        (uber_2['fare_amount'] < 100) &        (uber_2['Distance'] > 100)    ].index,    inplace=True)
+
+
+What are outliers?
+
+Outliers are values that are unusually different from the majority of the dataset.
+
+Examples:
+- A ride with zero distance.
+- A ride with a negative fare.
+- A ride with an unusually high fare for a very short distance.
+Why remove outliers?
+
+Because unrealistic values can negatively affect model training and prediction.
+
+Examiner question: What is the difference between missing values and outliers?
+
+Answer:
+- Missing values: Data that is not available.
+- Outliers: Data that is available but unusually high or low.
+Note: Your code removes distances above 60 km, so the later condition checking distances above 100 km is redundant. Also, these are rule-based filters, not a formal statistical outlier test such as IQR.
+Step 7: Extract date and time features
+uber_2['pickup_datetime'] = pd.to_datetime(    uber_2['pickup_datetime'])uber_2['Year'] = uber_2['pickup_datetime'].apply(    lambda time: time.year)uber_2['Month'] = uber_2['pickup_datetime'].apply(    lambda time: time.month)uber_2['Day'] = uber_2['pickup_datetime'].apply(    lambda time: time.day)uber_2['Day of Week_num'] = (    uber_2['pickup_datetime'].apply(        lambda time: time.dayofweek    ))uber_2['Hour'] = uber_2['pickup_datetime'].apply(    lambda time: time.hour)
+
+
+Explanation:
+
+We extract useful information from the pickup date.
+Feature	Meaning
+Year	Year of ride
+Month	Month of ride
+Day	Date of ride
+Day of Week	Day from Monday to Sunday
+Hour	Pickup hour
+
+
+Why?
+
+Because Uber fares and ride demand may vary depending on the day and time.
+
+Your next code maps numbers to weekday names:
+day_map = {    0: 'Mon',    1: 'Tue',    2: 'Wed',    3: 'Thu',    4: 'Fri',    5: 'Sat',    6: 'Sun'}uber_2['Day of Week'] = (    uber_2['Day of Week_num'].map(day_map))
+
+
+Step 8: Data visualization and statistical analysis
+Your code creates:
+- Bar chart: Number of trips per year.
+- Bar chart: Number of trips per month.
+- Bar chart: Number of trips per weekday.
+- Line graph: Monthly number of trips.
+- Heatmap: Relationship between weekdays and hours.
+- Mean, median and standard deviation of fare and distance.
+Important concepts:
+Term	Meaning
+Mean	Average value
+Median	Middle value after sorting
+Standard deviation	Measures how spread out values are
+Heatmap	Graph that uses colours to represent values
+GroupBy	Groups data based on a particular column
+
+
+You do not need to memorize every plotting command. Understand what each graph represents.
+Step 9: Check correlation
+Your code:
+corr = uber_2.corr(numeric_only=True)corr = corr.dropna(    how='all', axis=0).dropna(    how='all', axis=1)corr.style.background_gradient(cmap='BuGn')
+
+
+What is correlation?
+
+Correlation measures the strength and direction of the relationship between two numerical variables.
+
+Correlation values:
+Value	Meaning
++1	Perfect positive correlation
+0	No linear correlation
+-1	Perfect negative correlation
+
+
+Example:
+- Distance and fare generally have positive correlation.
+- If distance increases, fare generally increases.
+Viva: What is the difference between correlation and regression?
+
+Answer:
+
+Correlation measures the relationship between variables, whereas regression predicts the value of a dependent variable using independent variables.
+Step 10: Select X and y
+Your code:
+X = uber_2['Distance'].values.reshape(-1, 1)y = uber_2['fare_amount'].values.reshape(-1, 1)
+
+
+Remember:
+
+(Independent variable (X))
+
+Distance
+
+Input given to the model.
+(Dependent variable (y))
+
+Fare amount
+
+Output predicted by the model.
+
+What does reshape(-1,1) do?
+
+It converts a one-dimensional array into a two-dimensional column array, which is the expected format for scikit-learn features.
+Step 11: Standardization
+Your code:
+from sklearn.preprocessing import StandardScalerstd = StandardScaler()y_std = std.fit_transform(y)x_std = std.fit_transform(X)
+
+
+What is StandardScaler?
+
+It standardizes values so that their mean becomes approximately 0 and standard deviation becomes approximately 1.
+
+Formula:
+\[
+z = \frac{x-\mu}{\sigma}
+\]
+Where:
+- \(x\) = Original value
+- \(\mu\) = Mean
+- \(\sigma\) = Standard deviation
+Important correction for your viva: In a proper ML workflow, first split the data, then fit the scaler only on training data and transform the test data. This avoids data leakage. Scaling the target y is not necessary for ordinary Linear Regression.
+Step 12: Split the dataset
+from sklearn.model_selection import train_test_splitX_train, X_test, y_train, y_test = train_test_split(    x_std,    y_std,    test_size=0.2,    random_state=0)
+
+
+Explanation:
+- 80% data = Training data.
+- 20% data = Testing data.
+- random_state=0 = Reproducible splitting.
+Viva: Why do we split the dataset?
+
+Answer: To train the model on one portion of data and evaluate its performance on unseen data.
+Step 13: Implement Linear Regression
+from sklearn.linear_model import LinearRegressionl_reg = LinearRegression()l_reg.fit(X_train, y_train)
+
+
+Explanation:
+- LinearRegression() creates the model.
+- fit() trains the model using training data.
+Now check scores:
+print(    "Training set score:",    l_reg.score(X_train, y_train))print(    "Test set score:",    l_reg.score(X_test, y_test))
+
+
+The .score() method for Linear Regression returns the R² score.
+Step 14: Predict the fare
+y_pred = l_reg.predict(X_test)results = pd.DataFrame({    'Actual': y_test.ravel(),    'Predicted': y_pred.ravel()})results.head(20)
+
+
+This compares actual fare values with predicted fare values.
+Step 15: Evaluate the model
+Your code:
+from sklearn import metricsprint(    'Mean Absolute Error:',    metrics.mean_absolute_error(y_test, y_pred))print(    'Mean Squared Error:',    metrics.mean_squared_error(y_test, y_pred))print(    'Root Mean Squared Error:',    np.sqrt(        metrics.mean_squared_error(y_test, y_pred)    ))
+
+
+Understand these four evaluation metrics:
+Metric	Meaning	Better value
+R²	How much variation is explained by the model	Closer to 1
+MAE	Average absolute prediction error	Lower
+MSE	Average squared prediction error	Lower
+RMSE	Square root of MSE	Lower
+
+
+Viva: What is RMSE?
+
+Answer: RMSE stands for Root Mean Squared Error. It measures the average magnitude of prediction errors and is expressed in the same units as the target variable.
+Step 16: Find intercept and coefficient
+print(l_reg.intercept_)print(l_reg.coef_)
+
+
+- Intercept: Predicted value when the input is zero.
+- Coefficient: Change in predicted fare for a one-unit change in the input feature.
+The model equation is:
+\[
+Fare = Intercept + Coefficient \times Distance
+\]
+4. Important: Random Forest Regression is missing from your code
+(Important for examiner)
+
+Your assignment explicitly asks for two algorithms:
+1. Linear Regression
+2. Random Forest Regression
+But the code you attached implements only Linear Regression.
+
+Add this section after your Linear Regression evaluation.
+Random Forest Regression code
+from sklearn.ensemble import RandomForestRegressorfrom sklearn.metrics import r2_score, mean_squared_error, mean_absolute_errorimport numpy as np# Select input and outputX = uber_2[['Distance']]y = uber_2['fare_amount']# Split dataX_train, X_test, y_train, y_test = train_test_split(    X, y, test_size=0.2, random_state=0)# Create modelrf = RandomForestRegressor(    n_estimators=100,    random_state=0)# Train modelrf.fit(X_train, y_train)# Predictiony_pred_rf = rf.predict(X_test)# Evaluationprint("R2 Score:", r2_score(y_test, y_pred_rf))print("MAE:", mean_absolute_error(y_test, y_pred_rf))print("MSE:", mean_squared_error(y_test, y_pred_rf))print("RMSE:", np.sqrt(mean_squared_error(y_test, y_pred_rf)))
+
+
+Understand Random Forest:
+
+Random Forest is an ensemble learning algorithm that combines multiple decision trees to make a prediction.
+- n_estimators=100: Creates 100 decision trees.
+- fit(): Trains the model.
+- predict(): Predicts the fare.
+- random_state=0: Makes results reproducible.
+Unlike Linear Regression, Random Forest can learn complex, nonlinear relationships.
+
+One more important correction: Your original code standardizes X and y before splitting. For a scientifically correct comparison, split first and fit preprocessing only on training data. The Random Forest code above uses the original fare values, so its RMSE is in fare units. Your original Linear Regression RMSE is in standardized units and should not be directly compared with it. For a fair comparison, evaluate both models on the same unscaled test fares.
+5. Most important viva questions – Practical 1
+Learn these first. These are fundamental questions an examiner can ask.
+Basic ML viva
+Q1. What is Machine Learning?
+
+Machine Learning is a branch of AI that enables computers to learn from data and make predictions without being explicitly programmed for every task.
+
+Q2. What are the main types of Machine Learning?
+1. Supervised Learning
+2. Unsupervised Learning
+3. Reinforcement Learning
+Q3. What is supervised learning?
+
+It is a type of machine learning in which a model learns from labelled data.
+
+Q4. What is regression?
+
+Regression predicts continuous numerical values, such as house prices, salaries and Uber fares.
+
+Q5. What is classification?
+
+Classification predicts categories, such as spam/not spam or pass/fail.
+
+Q6. What is a feature?
+
+An input variable used for making predictions.
+
+Q7. What is a target variable?
+
+The output variable that the model predicts.
+Uber practical viva
+Q8. Which dataset are you using?
+
+Uber Fares Dataset from Kaggle.
+
+Q9. Which algorithm are you implementing?
+
+Linear Regression and Random Forest Regression.
+
+Q10. Why do we use NumPy?
+
+For numerical and mathematical operations.
+
+Q11. Why do we use Pandas?
+
+For reading, manipulating and analysing datasets.
+
+Q12. Why do we use Matplotlib?
+
+For data visualization through graphs.
+
+Q13. What is Haversine formula?
+
+It calculates geographical distance between two latitude-longitude points on Earth's surface.
+
+Q14. What is an outlier?
+
+An unusually high or low observation in a dataset.
+
+Q15. What is correlation?
+
+It measures the strength and direction of the relationship between two variables.
+
+Q16. What is Linear Regression?
+
+It is a supervised machine learning algorithm used to predict continuous numerical values by fitting a linear relationship between input and output.
+
+Q17. What is Random Forest?
+
+It is an ensemble learning algorithm that combines multiple decision trees to improve prediction performance.
+
+Q18. What is overfitting?
+
+When a model performs very well on training data but poorly on unseen testing data.
+
+Q19. What is underfitting?
+
+When a model fails to learn the important patterns in the training data.
+
+Q20. What is R² score?
+
+It measures how well the regression model explains the variation in the target variable. A value closer to 1 generally indicates a better fit.
+
+Q21. What is the difference between MAE and MSE?
+
+MAE calculates average absolute errors, whereas MSE calculates average squared errors.
+
+Q22. Why do we use train_test_split?
+
+To divide the dataset into training and testing portions.
+
+Q23. What is StandardScaler?
+
+It standardizes numerical features to have approximately zero mean and unit standard deviation.
+
+Q24. What is random_state=0?
+
+It fixes the random seed so that the same data split can be reproduced.
+
+Q25. Why is Random Forest called an ensemble algorithm?
+
+Because it combines predictions from multiple decision trees.
+6. Practical 1 – Last-minute revision flow
+Memorize this sequence. If you forget the code tomorrow, remembering the flow will help you reconstruct it.
+Uber Fare Prediction – Execution Flow
+1. Import libraries
+   Pandas, NumPy, Matplotlib, Seaborn.
+2. Read dataset
+   pd.read_csv()
+3. Explore dataset
+   head(), info(), isnull().sum()
+4. Preprocess
+   Remove unnecessary columns and missing values.
+5. Calculate distance
+   Haversine formula.
+6. Identify outliers
+   Remove invalid distances and fares.
+7. Visualize and analyse
+   Scatter plot, graphs and statistics.
+8. Check correlation
+   corr()
+9. Select X and y
+   X = Distance, y = Fare.
+10. Split dataset
+    80% training, 20% testing.
+11. Train models
+    Linear Regression and Random Forest.
+12. Evaluate
+    R², MAE, MSE and RMSE.
+//

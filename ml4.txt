@@ -1,0 +1,1238 @@
+# ML4 - Diabetes Prediction using KNN
+
+# Installing required libraries
+!pip install mlxtend missingno -q
+
+# Importing libraries
+from mlxtend.plotting import plot_decision_regions
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+sns.set()
+
+import warnings
+warnings.filterwarnings('ignore')
+
+%matplotlib inline
+
+
+# Loading the dataset
+diabetes_data = pd.read_csv('diabetes.csv')
+
+# Display first 5 rows
+diabetes_data.head()
+
+# Display dataset information
+diabetes_data.info(verbose=True)
+
+# Statistical information
+diabetes_data.describe()
+
+diabetes_data.describe().T
+
+
+# Creating a copy of the dataset
+diabetes_data_copy = diabetes_data.copy(deep=True)
+
+# Replacing zero values with NaN
+cols = ['Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI']
+
+diabetes_data_copy[cols] = diabetes_data_copy[cols].replace(0, np.nan)
+
+# Checking missing values
+print(diabetes_data_copy.isnull().sum())
+
+
+# Visualizing original dataset
+p = diabetes_data.hist(figsize=(20, 20))
+
+
+# Filling missing values using mean
+diabetes_data_copy['Glucose'] = diabetes_data_copy['Glucose'].fillna(
+    diabetes_data_copy['Glucose'].mean()
+)
+
+diabetes_data_copy['BloodPressure'] = diabetes_data_copy['BloodPressure'].fillna(
+    diabetes_data_copy['BloodPressure'].mean()
+)
+
+
+# Filling missing values using median
+diabetes_data_copy['SkinThickness'] = diabetes_data_copy['SkinThickness'].fillna(
+    diabetes_data_copy['SkinThickness'].median()
+)
+
+diabetes_data_copy['Insulin'] = diabetes_data_copy['Insulin'].fillna(
+    diabetes_data_copy['Insulin'].median()
+)
+
+diabetes_data_copy['BMI'] = diabetes_data_copy['BMI'].fillna(
+    diabetes_data_copy['BMI'].median()
+)
+
+
+# Visualizing dataset after handling missing values
+p = diabetes_data_copy.hist(figsize=(20, 20))
+
+
+# Observing shape of data
+diabetes_data.shape
+
+
+# Data type analysis
+sns.countplot(y=diabetes_data.dtypes.astype(str))
+
+plt.xlabel("count of each data type")
+plt.ylabel("data types")
+plt.show()
+
+
+# Null count analysis
+import missingno as msno
+
+p = msno.bar(diabetes_data)
+
+
+# Checking balance of outcome
+print(diabetes_data.Outcome.value_counts())
+
+p = diabetes_data.Outcome.value_counts().plot(kind="bar")
+
+
+# Scatter matrix
+from pandas.plotting import scatter_matrix
+
+p = scatter_matrix(diabetes_data, figsize=(25, 25))
+
+
+# Pairplot
+p = sns.pairplot(diabetes_data_copy, hue='Outcome')
+
+
+# Correlation heatmap of original dataset
+plt.figure(figsize=(12, 10))
+
+p = sns.heatmap(
+    diabetes_data.corr(),
+    annot=True,
+    cmap='RdYlGn'
+)
+
+
+# Correlation heatmap after handling missing values
+plt.figure(figsize=(12, 10))
+
+p = sns.heatmap(
+    diabetes_data_copy.corr(),
+    annot=True,
+    cmap='RdYlGn'
+)
+
+
+# Feature scaling
+from sklearn.preprocessing import StandardScaler
+
+sc_X = StandardScaler()
+
+X = pd.DataFrame(
+    sc_X.fit_transform(
+        diabetes_data_copy.drop(["Outcome"], axis=1)
+    ),
+    columns=[
+        'Pregnancies',
+        'Glucose',
+        'BloodPressure',
+        'SkinThickness',
+        'Insulin',
+        'BMI',
+        'DiabetesPedigreeFunction',
+        'Age'
+    ]
+)
+
+X.head()
+
+
+# Separating output variable
+y = diabetes_data_copy.Outcome
+
+
+# Splitting dataset
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=1/3,
+    random_state=42,
+    stratify=y
+)
+
+
+# Importing KNN classifier
+from sklearn.neighbors import KNeighborsClassifier
+
+test_scores = []
+train_scores = []
+
+
+# Testing K values from 1 to 14
+for i in range(1, 15):
+
+    knn = KNeighborsClassifier(i)
+
+    knn.fit(X_train, y_train)
+
+    train_scores.append(knn.score(X_train, y_train))
+
+    test_scores.append(knn.score(X_test, y_test))
+
+
+# Finding maximum training score
+max_train_score = max(train_scores)
+
+train_scores_ind = [
+    i for i, v in enumerate(train_scores)
+    if v == max_train_score
+]
+
+print(
+    'Max train score {} % and k = {}'.format(
+        max_train_score * 100,
+        list(map(lambda x: x + 1, train_scores_ind))
+    )
+)
+
+
+# Finding maximum testing score
+max_test_score = max(test_scores)
+
+test_scores_ind = [
+    i for i, v in enumerate(test_scores)
+    if v == max_test_score
+]
+
+print(
+    'Max test score {} % and k = {}'.format(
+        max_test_score * 100,
+        list(map(lambda x: x + 1, test_scores_ind))
+    )
+)
+
+
+# Plotting training and testing scores
+plt.figure(figsize=(12, 5))
+
+p = sns.lineplot(
+    x=range(1, 15),
+    y=train_scores,
+    marker='*',
+    label='Train Score'
+)
+
+p = sns.lineplot(
+    x=range(1, 15),
+    y=test_scores,
+    marker='o',
+    label='Test Score'
+)
+
+
+# Creating final KNN model with K = 11
+knn = KNeighborsClassifier(11)
+
+# Training the model
+knn.fit(X_train, y_train)
+
+# Testing accuracy
+knn.score(X_test, y_test)
+
+
+# Plotting decision regions
+value = 20000
+width = 20000
+
+plot_decision_regions(
+    X.values,
+    y.values,
+    clf=knn,
+    legend=2,
+    filler_feature_values={
+        2: value,
+        3: value,
+        4: value,
+        5: value,
+        6: value,
+        7: value
+    },
+    filler_feature_ranges={
+        2: width,
+        3: width,
+        4: width,
+        5: width,
+        6: width,
+        7: width
+    },
+    X_highlight=X_test.values
+)
+
+
+# Adding axes annotations
+plt.xlabel('Pregnancies (scaled)')
+plt.ylabel('Glucose (scaled)')
+
+plt.title('KNN with Diabetes Data')
+
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# **ML Practical 4: Diabetes Prediction using KNN**
+
+**Aim:** To predict whether a person has diabetes or not using the K-Nearest Neighbors (KNN) classification algorithm.
+
+**Dataset required:** `diabetes.csv`
+
+## **1. Basic explanation of the code**
+
+### **Step 1: Install and import libraries**
+
+```
+!pip install mlxtend missingno -q
+```
+
+Installs two additional libraries:
+
+- `mlxtend`: Used for plotting decision regions.
+- `missingno`: Used to visualize missing values.
+
+Other important libraries:
+
+| Library      | Use                         |
+| ------------ | --------------------------- |
+| Pandas       | Data handling               |
+| NumPy        | Numerical operations        |
+| Matplotlib   | Graph plotting              |
+| Seaborn      | Data visualization          |
+| Scikit-learn | Machine learning            |
+| Missingno    | Missing-value visualization |
+| Mlxtend      | Decision-region plotting    |
+
+```
+sns.set()
+```
+
+Sets the default Seaborn visualization style.
+
+```
+warnings.filterwarnings('ignore')
+```
+
+Hides warning messages.
+
+### **Step 2: Load the dataset**
+
+```
+diabetes_data = pd.read_csv('diabetes.csv')
+```
+
+Loads the diabetes dataset.
+
+- `head()` – Displays first five rows.
+- `info()` – Displays column names, data types and non-null values.
+- `describe()` – Displays statistical information.
+- `describe().T` – Displays the same statistics in a transposed format.
+
+### **Step 3: Copy the dataset**
+
+```
+diabetes_data_copy = diabetes_data.copy(deep=True)
+```
+
+Creates a separate copy of the original dataset so changes can be made without modifying the original.
+
+### **Step 4: Handle missing values**
+
+```
+cols = ['Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI']diabetes_data_copy[cols] = diabetes_data_copy[cols].replace(0, np.nan)
+```
+
+In these selected columns, zero is treated as a missing or invalid value and replaced with `NaN`.
+
+```
+diabetes_data_copy.isnull().sum()
+```
+
+Counts missing values in each column.
+
+**Why do we do this?**
+
+Zero glucose or zero BMI, for example, is generally not a valid measurement for these records. We treat such values as missing before filling them.
+
+### **Step 5: Visualize the dataset**
+
+```
+p = diabetes_data.hist(figsize=(20,20))
+```
+
+Displays histograms of the original dataset.
+
+Histograms help us understand the distribution of numerical values.
+
+### **Step 6: Fill missing values**
+
+```
+diabetes_data_copy['Glucose'] = diabetes_data_copy['Glucose'].fillna(    diabetes_data_copy['Glucose'].mean())
+```
+
+Fills missing glucose values using the mean.
+
+The practical uses:
+
+| Column        | Missing values filled using |
+| ------------- | --------------------------- |
+| Glucose       | Mean                        |
+| BloodPressure | Mean                        |
+| SkinThickness | Median                      |
+| Insulin       | Median                      |
+| BMI           | Median                      |
+
+**Mean:** Average of all values.
+
+**Median:** Middle value after arranging the values in order.
+
+```
+p = diabetes_data_copy.hist(figsize=(20,20))
+```
+
+Displays histograms after filling missing values.
+
+### **Step 7: Data analysis and visualization**
+
+The following commands help us understand the dataset:
+
+```
+diabetes_data.shape
+```
+
+Displays the number of rows and columns.
+
+```
+sns.countplot(y=diabetes_data.dtypes.astype(str))
+```
+
+Displays the count of different data types.
+
+```
+msno.bar(diabetes_data)
+```
+
+Visualizes the availability of non-missing values in the original dataset.
+
+```
+diabetes_data.Outcome.value_counts()
+```
+
+Counts the number of people in each outcome category.
+
+- `0` = No diabetes.
+- `1` = Diabetes.
+
+```
+diabetes_data.Outcome.value_counts().plot(kind="bar")
+```
+
+Displays the outcome counts using a bar graph.
+
+```
+scatter_matrix(diabetes_data, figsize=(25,25))
+```
+
+Displays relationships between numerical features.
+
+```
+sns.pairplot(diabetes_data_copy, hue='Outcome')
+```
+
+Displays pairwise relationships and distinguishes the two outcome classes.
+
+### **Step 8: Correlation heatmap**
+
+```
+sns.heatmap(diabetes_data.corr(), annot=True, cmap='RdYlGn')
+```
+
+Displays the correlation between the original dataset's numerical columns.
+
+```
+sns.heatmap(diabetes_data_copy.corr(), annot=True, cmap='RdYlGn')
+```
+
+Displays correlation after handling missing values.
+
+**Correlation:** Measures the relationship between two variables.
+
+- Close to +1 = Strong positive correlation.
+- Close to -1 = Strong negative correlation.
+- Close to 0 = Weak or no linear correlation.
+
+### **Step 9: Feature scaling**
+
+```
+from sklearn.preprocessing import StandardScalersc_X = StandardScaler()X = pd.DataFrame(    sc_X.fit_transform(        diabetes_data_copy.drop(["Outcome"], axis=1)    ),    columns=['Pregnancies', 'Glucose', 'BloodPressure',             'SkinThickness', 'Insulin', 'BMI',             'DiabetesPedigreeFunction', 'Age'])
+```
+
+StandardScaler converts the input features into a similar scale.
+
+**Why is scaling important?**
+
+KNN uses distance calculations. Features with larger values could dominate the distance if scaling is not applied.
+
+### **Step 10: Separate input and output**
+
+```
+y = diabetes_data_copy.Outcome
+```
+
+- **X:** Eight input features.
+- **y:** Output or target column (`Outcome`).
+
+The model uses the eight features to predict whether the person has diabetes.
+
+### **Step 11: Split the dataset**
+
+```
+X_train, X_test, y_train, y_test = train_test_split(    X, y, test_size=1/3, random_state=42, stratify=y)
+```
+
+Divides the dataset into:
+
+- Approximately 66.67% training data.
+- Approximately 33.33% testing data.
+
+`random_state=42` keeps the split reproducible.
+
+`stratify=y` maintains approximately the same proportion of diabetes and non-diabetes classes in both sets.
+
+## **2. KNN classification**
+
+[KNN & Distance Metrics — DS Course Material](https://images.openai.com/static-rsc-4/cC-yO2x2qjeul1Gs11jdKz4XScabEGn116Jl0IR39dCSN5B6injLUpGjdfnesNJayYQV7uEQ0xr9bRm1T6Wexw0_L9GyLvZAn1gstO61L8i5pHwgDZZoL_AULVpsnVZvNsLUPZqmhK2Qz2rn049PHPhcDgoyKXn-LzVzQJMsuHo?purpose=inline)
+
+[spiced-academy.github.io](https://spiced-academy.github.io/deployed_dill_book/sessions/13_KNN_Distance_Metrics.html?utm_source=chatgpt.com)
+
+### **Step 12: Import KNN**
+
+```
+from sklearn.neighbors import KNeighborsClassifier
+```
+
+Imports the K-Nearest Neighbors classification algorithm.
+
+**KNN:** It predicts the class of a new data point by checking the majority class among its nearest neighbors.
+
+### **Step 13: Find the best K value**
+
+```
+test_scores = []train_scores = []for i in range(1,15):    knn = KNeighborsClassifier(i)    knn.fit(X_train, y_train)    train_scores.append(knn.score(X_train, y_train))    test_scores.append(knn.score(X_test, y_test))
+```
+
+This loop tests K values from 1 to 14.
+
+For each K:
+
+1. Creates a KNN model.
+2. Trains the model.
+3. Calculates training accuracy.
+4. Calculates testing accuracy.
+5. Stores both accuracy scores in lists.
+
+### **Step 14: Find maximum training accuracy**
+
+```
+max_train_score = max(train_scores)
+```
+
+Finds the highest accuracy from the training scores.
+
+```
+train_scores_ind = [    i for i, v in enumerate(train_scores) if v == max_train_score]
+```
+
+Finds the index of the highest training score.
+
+```
+print('Max train score {} % and k = {}'.format(    max_train_score*100,    list(map(lambda x: x+1, train_scores_ind))))
+```
+
+Displays the maximum training accuracy and corresponding K value.
+
+### **Step 15: Find maximum testing accuracy**
+
+```
+max_test_score = max(test_scores)
+```
+
+Finds the highest testing accuracy.
+
+The following code finds and displays its corresponding K value.
+
+```
+test_scores_ind = [    i for i, v in enumerate(test_scores) if v == max_test_score]print('Max test score {} % and k = {}'.format(    max_test_score*100,    list(map(lambda x: x+1, test_scores_ind))))
+```
+
+**Important:** Testing accuracy is especially useful when choosing K because it measures performance on data not used for training.
+
+### **Step 16: Plot training and testing scores**
+
+```
+plt.figure(figsize=(12,5))p = sns.lineplot(    x=range(1,15),    y=train_scores,    marker='*',    label='Train Score')p = sns.lineplot(    x=range(1,15),    y=test_scores,    marker='o',    label='Test Score')
+```
+
+Creates a line graph comparing training and testing accuracy for K values from 1 to 14.
+
+This helps us understand how changing K affects model performance.
+
+### **Step 17: Create the final KNN model**
+
+```
+knn = KNeighborsClassifier(11)
+```
+
+Creates the final KNN model with K = 11.
+
+```
+knn.fit(X_train, y_train)
+```
+
+Trains the model using training data.
+
+```
+knn.score(X_test, y_test)
+```
+
+Calculates the testing accuracy.
+
+### **Step 18: Plot decision regions**
+
+[K Nearest Neighbors Classification, Classification: Supervised Machine Learning - DEV Community](https://images.openai.com/static-rsc-4/73ALOHGW0nFUmzM5MURU47dyPL0VDeBbOFFCawQLlqdCkMcTmCBu5biGckYSJXS7p5022y0UWM72bkAsILMOPkQZiPseycVrLkAE_50hUXEFW6Po-pzPcUfWmSejAUKEaZkrG0QLjZ9FOZiL4buUnlgmaCfhH3jRYXUo39v4m8k?purpose=inline)
+
+[dev.to](https://dev.to/harshm03/k-nearest-neighbors-classification-classification-supervised-machine-learning-2jlb?utm_source=chatgpt.com)
+
+```
+plot_decision_regions(    X.values, y.values,    clf=knn,    legend=2,    filler_feature_values={        2: value, 3: value, 4: value, 5: value,        6: value, 7: value    },    filler_feature_ranges={        2: width, 3: width, 4: width, 5: width,        6: width, 7: width    },    X_highlight=X_test.values)
+```
+
+Plots the decision regions of the KNN model.
+
+- `clf=knn`: Uses the trained KNN model.
+- `legend=2`: Displays the class legend.
+- `X_highlight`: Highlights the testing data.
+- `filler_feature_values` and `filler_feature_ranges`: Set values and ranges for the other features while plotting.
+
+The graph displays the decision boundary using the first two features.
+
+```
+plt.xlabel('Pregnancies (scaled)')plt.ylabel('Glucose (scaled)')plt.title('KNN with Diabetes Data')plt.show()
+```
+
+Adds axis labels, title and displays the graph.
+
+## **3. Important concepts to understand**
+
+| Concept             | Simple meaning                                   |
+| ------------------- | ------------------------------------------------ |
+| Diabetes prediction | Predicting whether a person has diabetes         |
+| KNN                 | Classifies using nearest data points             |
+| Outcome             | Target variable                                  |
+| Mean                | Average value                                    |
+| Median              | Middle value                                     |
+| NaN                 | Missing value                                    |
+| StandardScaler      | Brings features to a similar scale               |
+| Correlation         | Relationship between two variables               |
+| Histogram           | Shows distribution of values                     |
+| Heatmap             | Visual representation of values using colors     |
+| Stratify            | Maintains class proportions during splitting     |
+| Decision region     | Area where the model predicts a particular class |
+| K value             | Number of nearest neighbors considered           |
+
+## **4. Important viva questions and answers**
+
+### **Basic questions**
+
+**1. What is the aim of this practical?**
+
+To predict whether a person has diabetes using the K-Nearest Neighbors classification algorithm.
+
+**2. What is diabetes prediction?**
+
+It is the process of using patient-related data to predict whether a person is likely to have diabetes.
+
+**3. What is Machine Learning?**
+
+Machine Learning is a branch of AI that allows computers to learn patterns from data and make predictions.
+
+**4. What type of learning is used in this practical?**
+
+Supervised learning because the dataset contains labelled outcomes.
+
+**5. Is this classification or regression?**
+
+Classification because the output has two classes: 0 and 1.
+
+**6. What is the dataset name?**
+
+`diabetes.csv`.
+
+### **Dataset questions**
+
+**7. What is the target column?**
+
+`Outcome`.
+
+**8. What does Outcome = 0 mean?**
+
+The person does not have diabetes according to the dataset label.
+
+**9. What does Outcome = 1 mean?**
+
+The person has diabetes according to the dataset label.
+
+**10. How many input features are used?**
+
+Eight input features.
+
+**11. Name the eight input features.**
+
+Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin, BMI, DiabetesPedigreeFunction and Age.
+
+**12. Why do we create a dataset copy?**
+
+To make changes to the copied dataset without modifying the original dataset.
+
+**13. Why are zero values replaced with NaN?**
+
+Because zero is treated as an invalid or missing measurement in selected medical columns.
+
+**14. What is NaN?**
+
+NaN stands for Not a Number. It represents a missing or undefined value.
+
+**15. What is the difference between mean and median?**
+
+Mean is the average, whereas median is the middle value after sorting the data.
+
+**16. Why do we use mean for Glucose and BloodPressure?**
+
+To fill missing values using the average of the available measurements.
+
+**17. Why do we use median for Insulin, BMI and SkinThickness?**
+
+To fill missing values using the middle value, which is less affected by extreme values.
+
+### **KNN questions**
+
+**18. What is KNN?**
+
+KNN stands for K-Nearest Neighbors. It classifies a new data point based on the majority class of its nearest neighbors.
+
+**19. Is KNN supervised or unsupervised?**
+
+KNN is a supervised learning algorithm.
+
+**20. What is K in KNN?**
+
+K represents the number of nearest neighbors considered for prediction.
+
+**21. Which K values are tested in our practical?**
+
+K values from 1 to 14.
+
+**22. Which K value is used in the final model?**
+
+K = 11.
+
+**23. Why do we use K = 11?**
+
+The practical creates the final model using 11 neighbors. The code tests K values first, but it does not automatically select the best K; the testing scores should be checked before choosing it.
+
+**24. What happens if K is too small?**
+
+The model may become sensitive to noise and overfit.
+
+**25. What happens if K is too large?**
+
+The model may become too generalized and underfit.
+
+**26. How does KNN calculate distance?**
+
+It commonly uses Euclidean distance to measure the distance between data points.
+
+**27. Why is KNN called a lazy learner?**
+
+Because it does not build a complex model during training. It stores training data and performs distance calculations during prediction.
+
+### **Data preprocessing questions**
+
+**28. Why do we use StandardScaler?**
+
+To bring all numerical features to a similar scale.
+
+**29. Why is scaling important in KNN?**
+
+Because KNN uses distance calculations, and larger-valued features can dominate without scaling.
+
+**30. What is train_test_split?**
+
+It divides the dataset into training and testing data.
+
+**31. What is the train-test ratio in our practical?**
+
+Approximately 66.67% training and 33.33% testing.
+
+**32. What is stratify=y?**
+
+It maintains the same approximate proportion of output classes in training and testing datasets.
+
+**33. What is random_state=42?**
+
+It makes the random splitting process reproducible.
+
+### **Visualization and evaluation questions**
+
+**34. What is a histogram?**
+
+A histogram represents the distribution of numerical data.
+
+**35. What is a heatmap?**
+
+A heatmap represents data values using different colors.
+
+**36. What is a correlation matrix?**
+
+It shows the correlation between different numerical features.
+
+**37. What is a decision boundary?**
+
+A decision boundary separates different predicted classes.
+
+**38. What is accuracy?**
+
+Accuracy is the percentage of correctly predicted results out of all predictions.
+
+**39. What is training accuracy?**
+
+Accuracy calculated using the data used to train the model.
+
+**40. What is testing accuracy?**
+
+Accuracy calculated using unseen testing data.
+
+**41. Why do we compare training and testing accuracy?**
+
+To understand how well the model learns and how well it performs on unseen data.
+
+**42. What is&#x20;**`plot_decision_regions()`**?**
+
+It is a function from mlxtend used to visualize the decision regions of a classifier.
+
+## **5. Practical flow to remember during the exam**
+
+## **ML4 execution flow**
+
+1. Install mlxtend and missingno
+2. Import libraries
+3. Load `diabetes.csv`
+4. Explore data using head, info and describe
+5. Create a copy of the dataset
+6. Replace zero values with NaN in selected columns
+7. Check missing values
+8. Fill missing values using mean and median
+9. Visualize data using histograms, countplot and heatmaps
+10. Apply StandardScaler
+11. Separate X and y
+12. Split data using train_test_split
+13. Test K values from 1 to 14
+14. Compare training and testing accuracy
+15. Create final KNN model with K = 11
+16. Train and calculate testing accuracy
+17. Plot decision regions
+
+## **6. Most important values to memorize**
+
+| Question        | Answer                               |
+| --------------- | ------------------------------------ |
+| Practical       | Diabetes Prediction                  |
+| Dataset         | `diabetes.csv`                       |
+| Algorithm       | KNN                                  |
+| Target column   | Outcome                              |
+| Input features  | 8                                    |
+| Output classes  | 0 and 1                              |
+| Missing values  | Replaced using mean/median           |
+| Scaling         | StandardScaler                       |
+| K values tested | 1 to 14                              |
+| Final K value   | 11                                   |
+| Training data   | 2/3 approximately                    |
+| Testing data    | 1/3 approximately                    |
+| Random state    | 42                                   |
+| Stratification  | `stratify=y`                         |
+| Visualization   | Heatmap, histogram, decision regions |
+
+**One-line explanation for the examiner:**
+
+"In this practical, we predict diabetes using the KNN algorithm. First, we load and explore the dataset, handle missing values, visualize the data, apply feature scaling, split the dataset into training and testing sets, test different K values, train the final KNN model with K = 11, and visualize its decision regions."
+
+**Important practical notes:**
+
+- The final K value in your supplied code is fixed at 11. The code does not automatically replace it with the best testing K.
+- The decision-region plot uses eight input features but displays only two axes. The remaining features are assigned fixed values for visualization.
+- For a more reliable model evaluation, scaling and missing-value filling should ideally be fitted using training data only, rather than the entire dataset. Your supplied practical performs these steps before splitting.

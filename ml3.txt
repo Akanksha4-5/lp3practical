@@ -1,0 +1,682 @@
+pip install tensorflow keras
+
+# ML3 - Bank Customer Churn Prediction using Neural Network
+
+# Importing libraries
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Loading dataset
+df = pd.read_csv("Churn_Modelling.csv")
+
+df.head()
+df.shape
+df.describe()
+df.isnull()
+df.isnull().sum()
+df.info()
+df.dtypes
+df.columns
+
+# Dropping unnecessary columns
+df = df.drop(['RowNumber', 'Surname', 'CustomerId'], axis=1)
+
+df.head()
+
+# Visualization function
+def visualization(x, y, xlabel):
+    plt.figure(figsize=(10, 5))
+    plt.hist([x, y], color=['red', 'green'],
+             label=['exit', 'not_exit'])
+    plt.xlabel(xlabel, fontsize=20)
+    plt.ylabel("No. of customers", fontsize=20)
+    plt.legend()
+
+# Visualization of Tenure
+df_churn_exited = df[df['Exited'] == 1]['Tenure']
+df_churn_not_exited = df[df['Exited'] == 0]['Tenure']
+
+visualization(df_churn_exited, df_churn_not_exited, "Tenure")
+
+# Visualization of Age
+df_churn_exited2 = df[df['Exited'] == 1]['Age']
+df_churn_not_exited2 = df[df['Exited'] == 0]['Age']
+
+visualization(df_churn_exited2, df_churn_not_exited2, "Age")
+
+# Encoding categorical variables
+states = pd.get_dummies(df['Geography'], drop_first=True, dtype=int)
+gender = pd.get_dummies(df['Gender'], drop_first=True, dtype=int)
+
+df = pd.concat([df, gender, states], axis=1)
+
+df.head()
+
+# Selecting input and output variables
+X = df[['CreditScore', 'Age', 'Tenure', 'Balance',
+        'NumOfProducts', 'HasCrCard', 'IsActiveMember',
+        'EstimatedSalary', 'Male', 'Germany', 'Spain']]
+
+y = df['Exited']
+
+# Splitting dataset
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.30, random_state=42
+)
+
+# Feature scaling
+from sklearn.preprocessing import StandardScaler
+
+sc = StandardScaler()
+
+X_train = sc.fit_transform(X_train)
+X_test = sc.transform(X_test)
+
+# Importing Keras
+import keras
+from keras.models import Sequential
+from keras.layers import Dense
+
+# Creating ANN model
+classifier = Sequential()
+
+# Adding input and hidden layer
+classifier.add(Dense(
+    activation="relu",
+    input_dim=11,
+    units=6,
+    kernel_initializer="uniform"
+))
+
+# Adding second hidden layer
+classifier.add(Dense(
+    activation="relu",
+    units=6,
+    kernel_initializer="uniform"
+))
+
+# Adding output layer
+classifier.add(Dense(
+    activation="sigmoid",
+    units=1,
+    kernel_initializer="uniform"
+))
+
+# Compiling the model
+classifier.compile(
+    optimizer="adam",
+    loss="binary_crossentropy",
+    metrics=['accuracy']
+)
+
+# Displaying model summary
+classifier.summary()
+
+# Training the ANN model
+classifier.fit(
+    X_train,
+    y_train,
+    batch_size=10,
+    epochs=50
+)
+
+# Predicting test data
+y_pred = classifier.predict(X_test)
+
+# Converting probabilities into 0 or 1
+y_pred = (y_pred > 0.5)
+
+# Evaluating model
+from sklearn.metrics import confusion_matrix, accuracy_score, classification_report
+
+cm = confusion_matrix(y_test, y_pred)
+
+cm
+
+# Calculating accuracy
+accuracy = accuracy_score(y_test, y_pred)
+
+accuracy
+
+# Plotting confusion matrix
+plt.figure(figsize=(10, 7))
+
+sns.heatmap(cm, annot=True)
+
+plt.xlabel('Predicted')
+plt.ylabel('Truth')
+
+# Classification report
+print(classification_report(y_test, y_pred))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2. Basic explanation of the code
+Step 1: Import libraries
+- Pandas: Handles dataset.
+- NumPy: Performs numerical operations.
+- Seaborn and Matplotlib: Create graphs and visualizations.
+Step 2: Load the dataset
+df = pd.read_csv("Churn_Modelling.csv")
+
+
+
+Loads the bank customer dataset.
+- df.head() – Displays first five rows.
+- df.shape – Displays number of rows and columns.
+- df.describe() – Displays statistical information.
+- df.isnull().sum() – Checks missing values.
+- df.info() – Displays dataset information.
+- df.dtypes – Displays data types.
+- df.columns – Displays column names.
+Step 3: Drop unnecessary columns
+df = df.drop(['RowNumber', 'Surname', 'CustomerId'], axis=1)
+
+
+
+Removes columns that do not help predict customer churn.
+Step 4: Data visualization
+def visualization(x, y, xlabel):
+
+
+
+Creates a histogram to compare customers who exited and customers who did not exit.
+- Red = Customers who exited.
+- Green = Customers who did not exit.
+The practical visualizes Tenure and Age.
+Step 5: Encoding categorical variables
+states = pd.get_dummies(df['Geography'], drop_first=True, dtype=int)gender = pd.get_dummies(df['Gender'], drop_first=True, dtype=int)
+
+
+
+Converts text categories into numerical values because neural networks work with numerical input.
+
+For example:
+- Gender becomes Male (0 or 1).
+- Geography becomes Germany and Spain (0 or 1).
+drop_first=True removes one category to avoid redundant columns.
+Step 6: Separate input and output
+X = df[['CreditScore', 'Age', 'Tenure', 'Balance',        'NumOfProducts', 'HasCrCard', 'IsActiveMember',        'EstimatedSalary', 'Male', 'Germany', 'Spain']]y = df['Exited']
+
+
+
+- X: 11 input features used for prediction.
+- y: Output column.
+- Exited = 1 means customer left the bank.
+- Exited = 0 means customer stayed.
+Step 7: Split the dataset
+train_test_split(X, y, test_size=0.30, random_state=42)
+
+
+
+Divides data into:
+- 70% training data.
+- 30% testing data.
+Step 8: Feature scaling
+sc = StandardScaler()X_train = sc.fit_transform(X_train)X_test = sc.transform(X_test)
+
+
+
+StandardScaler brings features to a similar scale.
+
+This helps the neural network train more effectively.
+Step 9: Import Keras
+from keras.models import Sequentialfrom keras.layers import Dense
+
+
+
+- Keras: Deep learning library used to build neural networks.
+- Sequential: Creates a neural network layer by layer.
+- Dense: Creates a fully connected layer of neurons.
+Step 10: Create ANN model
+classifier = Sequential()
+
+
+
+Creates an empty Artificial Neural Network.
+
+The practical has three Dense layers:
+ANN architecture
+Input layer
+11
+Input features
+
+
+Hidden layer 1
+6
+Neurons · ReLU
+
+
+Hidden layer 2
+6
+Neurons · ReLU
+
+
+Output layer
+1
+Neuron · Sigmoid
+
+
+classifier.add(Dense(activation="relu", input_dim=11,                     units=6, kernel_initializer="uniform"))
+
+
+
+Creates the first hidden layer with 6 neurons and 11 input features.
+classifier.add(Dense(activation="relu", units=6,                     kernel_initializer="uniform"))
+
+
+
+Creates the second hidden layer with 6 neurons.
+classifier.add(Dense(activation="sigmoid", units=1,                     kernel_initializer="uniform"))
+
+
+
+Creates the output layer with one neuron to predict whether the customer will leave or stay.
+Step 11: Compile the model
+classifier.compile(    optimizer="adam",    loss="binary_crossentropy",    metrics=['accuracy'])
+
+
+
+- Adam: Optimizer that updates model weights during training.
+- Binary Crossentropy: Loss function used for binary classification.
+- Accuracy: Measures correct predictions.
+Step 12: Model summary
+classifier.summary()
+
+
+
+Displays the neural network architecture, layers, and number of parameters.
+Step 13: Train the model
+classifier.fit(X_train, y_train, batch_size=10, epochs=50)
+
+
+
+Trains the ANN using training data.
+- batch_size=10: Processes 10 samples at a time.
+- epochs=50: The model goes through the complete training dataset 50 times.
+Step 14: Make predictions
+y_pred = classifier.predict(X_test)
+
+
+
+Predicts the probability of customers leaving the bank.
+y_pred = (y_pred > 0.5)
+
+
+
+Converts probabilities into binary output:
+- Greater than 0.5 = True / 1 (Exited).
+- 0.5 or below = False / 0 (Not exited).
+Step 15: Evaluate the model
+cm = confusion_matrix(y_test, y_pred)
+
+
+
+Creates a confusion matrix to compare actual and predicted results.
+accuracy = accuracy_score(y_test, y_pred)
+
+
+
+Calculates prediction accuracy.
+sns.heatmap(cm, annot=True)
+
+
+
+Displays the confusion matrix as a heatmap.
+print(classification_report(y_test, y_pred))
+
+
+
+Displays precision, recall, F1-score and support.
+
+3. Important concepts to understand
+Concept	Simple meaning
+Customer churn	When a customer stops using a company's services
+ANN	Artificial Neural Network, inspired by the human brain
+Neuron	Basic processing unit of a neural network
+Input layer	Receives input features
+Hidden layer	Learns patterns from data
+Output layer	Produces the final prediction
+ReLU	Activation function used in hidden layers
+Sigmoid	Converts output into a probability between 0 and 1
+Epoch	One complete pass through training data
+Batch size	Number of samples processed together
+Optimizer	Updates weights to improve the model
+Loss	Measures prediction error
+StandardScaler	Standardizes numerical features
+
+4. Important viva questions and answers
+Basic questions
+1. What is customer churn?
+
+Customer churn means when a customer stops using the services of a company or bank.
+
+2. What is the aim of this practical?
+
+To predict whether a bank customer will leave or stay using an Artificial Neural Network.
+
+3. What is ANN?
+
+ANN stands for Artificial Neural Network. It is a machine learning model inspired by the working of the human brain.
+
+4. What is Keras?
+
+Keras is a deep learning API used to build and train neural networks. In this practical, it is used with TensorFlow.
+
+5. What is TensorFlow?
+
+TensorFlow is an open-source machine learning framework used to build and train machine learning and deep learning models.
+
+6. What type of learning is used here?
+
+Supervised learning because the dataset contains labelled output in the Exited column.
+
+7. Is this classification or regression?
+
+Classification because the output is divided into two classes: 0 and 1.
+Dataset questions
+8. What is the dataset name?
+
+Churn_Modelling.csv
+
+9. What is the target column?
+
+Exited.
+
+10. What does Exited = 1 mean?
+
+The customer has left the bank.
+
+11. What does Exited = 0 mean?
+
+The customer has not left the bank.
+
+12. Why are RowNumber, Surname and CustomerId removed?
+
+They are identifiers or names and do not provide useful information for predicting churn in this model.
+
+13. What is one-hot encoding?
+
+It converts categorical data into numerical columns containing 0 and 1.
+
+14. Why do we use pd.get_dummies()?
+
+To convert categorical columns such as Geography and Gender into numerical data.
+Neural network questions
+15. What is a neuron?
+
+A neuron is a basic unit of an artificial neural network that processes input and produces output.
+
+16. What is a Dense layer?
+
+A Dense layer is a fully connected layer where each neuron is connected to all neurons in the previous layer.
+
+17. What is the Sequential model?
+
+It is a Keras model used to create neural networks by adding layers one after another.
+
+18. How many input features are used in our practical?
+
+11 input features.
+
+19. How many hidden layers are used?
+
+2 hidden layers.
+
+20. How many neurons are there in each hidden layer?
+
+6 neurons in each hidden layer.
+
+21. How many neurons are there in the output layer?
+
+1 neuron.
+
+22. What is ReLU?
+
+ReLU stands for Rectified Linear Unit. It is an activation function used in hidden layers.
+
+23. What is Sigmoid?
+
+Sigmoid is an activation function that produces an output between 0 and 1.
+
+24. Why is sigmoid used in the output layer?
+
+Because this is a binary classification problem and sigmoid gives a probability for the two classes.
+
+25. What is an activation function?
+
+An activation function decides the output of a neuron and helps the network learn complex patterns.
+Training questions
+26. What is an epoch?
+
+One complete pass of the entire training dataset through the neural network.
+
+27. What is the epoch value in our practical?
+
+28. What is batch size?
+
+The number of training samples processed before the model updates its weights.
+
+29. What is the batch size in our practical?
+
+30. What is Adam optimizer?
+
+Adam is an optimization algorithm used to update the weights of a neural network to reduce loss.
+
+31. What is binary crossentropy?
+
+It is a loss function used to measure errors in binary classification.
+
+32. Why do we use StandardScaler?
+
+To bring numerical features to a similar scale so that large-valued features do not dominate the learning process.
+Evaluation questions
+33. What is accuracy?
+
+The percentage of correct predictions made by the model.
+
+34. What is a confusion matrix?
+
+A table that compares actual values with predicted values.
+
+35. What is precision?
+
+Precision tells us how many predicted positive results are actually positive.
+
+36. What is recall?
+
+Recall tells us how many actual positive cases are correctly identified.
+
+37. What is F1-score?
+
+F1-score is the harmonic mean of precision and recall.
+
+38. What is the threshold used in our practical?
+
+0.5.
+
+39. What does classification_report() display?
+
+Precision, recall, F1-score and support for each class.
+
+40. What is the difference between training and testing data?
+
+Training data teaches the model, while testing data checks how well the model performs on unseen data.
+
+5. Practical flow to remember during the exam
+ML3 execution flow
+1. Import libraries
+2. Read Churn_Modelling.csv
+3. Explore dataset: head, shape, describe, null values
+4. Drop unnecessary columns
+5. Visualize Age and Tenure
+6. Encode Geography and Gender
+7. Separate X and y
+8. Split data into 70:30
+9. Apply StandardScaler
+10. Create Sequential ANN model
+11. Add 2 hidden layers and 1 output layer
+12. Compile using Adam and Binary Crossentropy
+13. Train for 50 epochs
+14. Predict and apply 0.5 threshold
+15. Calculate accuracy and confusion matrix
+16. Display heatmap and classification report
+
+6. Most important values to memorize
+Question	Answer
+Practical	Bank Customer Churn
+Dataset	Churn_Modelling.csv
+Algorithm	Artificial Neural Network
+Library	Keras
+Framework	TensorFlow
+Target column	Exited
+Input features	11
+Hidden layers	2
+Neurons	6 and 6
+Output neurons	1
+Hidden activation	ReLU
+Output activation	Sigmoid
+Optimizer	Adam
+Loss function	Binary Crossentropy
+Epochs	50
+Batch size	10
+Train-test split	70:30
+Threshold	0.5
+Evaluation	Accuracy, confusion matrix, classification report
+
+One-line explanation for the examiner:
+
+"In this practical, we predict whether a bank customer will leave or stay using an Artificial Neural Network. We preprocess the data, encode categorical variables, scale the features, create a neural network using Keras, train it for 50 epochs, and evaluate its performance using accuracy, confusion matrix and classification report."
+
+Important practical tip: If you get an error at import keras, first install TensorFlow using %pip install tensorflow keras, restart the notebook kernel, and run the code again.
